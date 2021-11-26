@@ -95,21 +95,19 @@ module EditorCore
       line = current_line
       c = cursor.col
       m = line.length
-      while c<m && line[c]&.match(/sr[ \t]/)
+      while c<m && line[c]&.match(/[^a-zA-Z]/)
         c += 1
       end
       if c >= m
+        # FIXME: Pathological cases can cause stack issue here.
         @cursor = Cursor.new(cursor.row,m)
         right
         return next_word
       end
 
-
-      if run = line[c..-1]&.match(/([@a-zA-Z]+)/)
+      if run = line[c..-1]&.match(/([a-zA-Z]+)/)
         c += run[0].length
         #pry([line,c,run])
-      elsif run = line[c..-1]&.match(/([^ \t])+/)
-        c += run[0].length
       end
       off = c - cursor.col
       right(off)

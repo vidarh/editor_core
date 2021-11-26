@@ -1,6 +1,8 @@
 require 'drb/observer'
 require 'date'
 
+require_relative 'history'
+
 module EditorCore
   class Buffer
 
