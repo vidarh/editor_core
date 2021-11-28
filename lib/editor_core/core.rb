@@ -58,7 +58,7 @@ module EditorCore
 
     def page_down
       lines = view_down(view.height-1)
-      @cursor = cursor.down(buffer, lines)
+      #@cursor = cursor.down(buffer, lines)
     end
 
     def page_up
@@ -70,6 +70,7 @@ module EditorCore
       oldtop = view.top
       view.top -= offset
       view.top = 0 if view.top < 0
+      up(offset)
       oldtop - view.top
     end
 
@@ -79,6 +80,7 @@ module EditorCore
       if view.top > buffer.lines_count
         view.top = buffer.lines_count
       end
+      down(offset)
       view.top - oldtop
     end
 
@@ -91,6 +93,8 @@ module EditorCore
     end
 
     # ## Complex navigation ##
+
+    # FIXME: Rewrite like prev_word
     def next_word
       line = current_line
       c = cursor.col
@@ -115,22 +119,38 @@ module EditorCore
     end
 
 
-    def prev_word
-      return if cursor.col == 0
-      line = current_line
-      c = cursor.col
-      if c > 0
-        c -= 1
+    def beginning_of_file?
+      cursor&.beginning_of_file?
+    end
+
+    def current_char
+      current_line[cursor.col]
+    end
+
+    def left_until_match(r)
+      off = -1
+      loop do
+        left
+        off +=1
+        break if beginning_of_file? || current_char&.match(r)
       end
-      while c > 0 && line[c] && line[c].match(/[ \t]/)
-        c -= 1
-      end
-      while c > 0 && !(line[c-1].match(/[ \t\-]/))
-        c -= 1
-      end
-      off = cursor.col - c
-      @cursor = Cursor.new(cursor.row, c)
       off
+    end
+
+    def left_while_match(r)
+      off = 0
+      while !beginning_of_file? && current_char&.match(r)
+        left
+        off +=1
+      end
+      # Because we'll advance once too far left
+      right if !current_char&.match(r)
+      off
+    end
+
+    def prev_word
+      word = /[A-Za-z]/
+      left_until_match(word) + left_while_match(word)
     end
 
     # ## Mutation ##
